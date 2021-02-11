@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/chacha2.iml" filepath="$PROJECT_DIR$/chacha2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/envelopetool.iml" filepath="$PROJECT_DIR$/envelopetool.iml" />
     </modules>
   </component>
 </project>
