@@ -3,6 +3,23 @@ import java.lang.Math.ceil
 import java.math.BigInteger
 import java.util.*
 
+/**
+ * The ChaCha20 Block Function
+ * ===========================
+ *
+ * The ChaCha block function transforms a ChaCha state by running multiple quarter rounds.
+ *
+ * The inputs to ChaCha20 are:
+ *
+ * - A 256-bit key, treated as a concatenation of eight 32-bit little-endian integers.
+ * - A 32-bit block count parameter, treated as a 32-bit little-endian integer.
+ * - A 96-bit nonce, treated as a concatenation of three 32-bit little-endian integers.
+ *
+ * The output is 64 random-looking bytes.
+ *
+ * See Section 2.3 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+ *
+ */
 fun chacha20Block(key: Array<Int>, counter: Int, nonce: Array<Int>): Array<Int> {
     fun toByteArray(uints: Array<Long>): Array<Int> {
         val ret = Array(uints.size * 4) { 0 }
@@ -91,15 +108,11 @@ fun chacha20Block(key: Array<Int>, counter: Int, nonce: Array<Int>): Array<Int> 
     })
 }
 
-fun printblockhelper(uints: Array<Long>) {
-    for (i in 0..15) {
-        if (i % 4 == 0) {
-            println()
-        }
-        val index = "00000000" + uints.get(i).toString(16)
-        print(index.substring(index.length - 8) + " ")
-    }
-}
+/**
+ * Format byte array in form ff:ff:ff...:ff
+ *
+ * Inpyt are an arbitrary length byte array
+ */
 fun fingerprint(bytes: Array<Int>): String {
     val ret = StringBuffer()
     var i = 0
@@ -117,6 +130,21 @@ fun fingerprint(bytes: Array<Int>): String {
     }
     return ret.toString()
 }
+
+/**
+ * Serialize byte array to stdout
+ *
+ * Example output:
+ *
+ *    000  4c 61 64 69 65 73 20 61  6e 64 20 47 65 6e 74 6c  Ladies a nd Gentl
+ *    010  65 6d 65 6e 20 6f 66 20  74 68 65 20 63 6c 61 73  emen of  the clas
+ *    020  73 20 6f 66 20 27 39 39  3a 20 49 66 20 49 20 63  s of '99 : If I c
+ *    030  6f 75 6c 64 20 6f 66 66  65 72 20 79 6f 75 20 6f  ould off er you o
+ *    040  6e 6c 79 20 6f 6e 65 20  74 69 70 20 66 6f 72 20  nly one  tip for
+ *    050  74 68 65 20 66 75 74 75  72 65 2c 20 73 75 6e 73  the futu re, suns
+ *    060  63 72 65 65 6e 20 77 6f  75 6c 64 20 62 65 20 69  creen wo uld be i
+ *    070  74 2e                                             t.
+ */
 fun serialize(bytes: Array<Int>) {
     var ascii = ""
     var i = 0
@@ -151,21 +179,48 @@ fun serialize(bytes: Array<Int>) {
     println(ascii)
 }
 
+/**
+ * The ChaCha20 Encryption Algorithm
+ * =================================
+ *
+ * ChaCha20 is a stream cipher designed by D. J. Bernstein.  It is a
+ * refinement of the Salsa20 algorithm, and it uses a 256-bit key.
+ *
+ * ChaCha20 successively calls the ChaCha20 block function, with the
+ * same key and nonce, and with successively increasing block counter
+ * parameters.  ChaCha20 then serializes the resulting state by writing
+ * the numbers in little-endian order, creating a keystream block.
+ *
+ * The inputs to ChaCha20 are:
+ *
+ * - A 256-bit key
+ * - A 32-bit initial counter.  This can be set to any number, but will
+ * usually be zero or one.  It makes sense to use one if we use the
+ * zero block for something else, such as generating a one-time
+ * authenticator key as part of an AEAD algorithm.
+ * - A 96-bit nonce.  In some protocols, this is known as the Initialization Vector.
+ * - An arbitrary-length plaintext
+ *
+ * The output is an encrypted message, or "ciphertext", of the same length.
+ *
+ * See Section 2.4 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+ *
+ */
 fun chacha20Encrypt(key: Array<Int>, counter: Int, nonce: Array<Int>, plaintext: Array<Int>): Array<Int> {
     val numFullBlocks = plaintext.size / 64
     val hasPartialBlock = (plaintext.size % 64) != 0
     val cyphertext = Array(plaintext.size) { 0 }
 
-    for (j in 0..(numFullBlocks-1)) {
-        val keyString = chacha20Block(key, counter+j, nonce)
+    for (j in 0..(numFullBlocks - 1)) {
+        val keyString = chacha20Block(key, counter + j, nonce)
         for (k in 0..63) {
             cyphertext.set((j * 64) + k, (plaintext.get((j * 64) + k) xor keyString.get(k)))
         }
     }
     if (hasPartialBlock) {
         val j = numFullBlocks
-        val keyString = chacha20Block(key, counter+j, nonce)
-        for (k in 0..(plaintext.size % 64)-1) {
+        val keyString = chacha20Block(key, counter + j, nonce)
+        for (k in 0..(plaintext.size % 64) - 1) {
             cyphertext.set((j * 64) + k, (plaintext.get((j * 64) + k) xor keyString.get(k)))
         }
     }
@@ -173,11 +228,45 @@ fun chacha20Encrypt(key: Array<Int>, counter: Int, nonce: Array<Int>, plaintext:
     return cyphertext
 }
 
+/**
+ * Generating the Poly1305 Key Using ChaCha20
+ * ==========================================
+ *
+ * Pseudorandomly generate a one-time key based on a Session key and IV.
+ *
+ * The inputs to ChaCha20 are:
+ *
+ * - A 256-bit key
+ * - A 96-bit nonce.  In some protocols, this is known as the Initialization Vector.
+ *
+ * The output is a 128-bit one-time key
+ *
+ * See Section 2.6 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+ *
+ */
 fun poly1305KeyGen(key: Array<Int>, nonce: Array<Int>): Array<Int> {
     val block = chacha20Block(key, 0, nonce)
     return block.copyOfRange(0, 32)
 }
 
+/**
+ * The Poly1305 Algorithm
+ * ======================
+ *
+ * Poly1305 is a one-time authenticator designed by D. J. Bernstein.
+ * Poly1305 takes a 32-byte one-time key and a message and produces a
+ * 16-byte tag.  This tag is used to authenticate the message.
+ *
+ * The inputs to Poly1305 are:
+ *
+ * - A 256-bit one-time key
+ * - An arbitrary length message
+ *
+ * The output is a 128-bit tag.
+ *
+ * See Section 2.5 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+ *
+ */
 fun poly1305MAC(key: Array<Int>, msg: Array<Int>): Array<Int> {
     fun toBigInt(inputArray: Array<Int>): BigInteger {
         var ret = BigInteger.ZERO
@@ -189,11 +278,13 @@ fun poly1305MAC(key: Array<Int>, msg: Array<Int>): Array<Int> {
         }
         return ret
     }
+
     fun toTag(inputNum: BigInteger): Array<Int> {
-        return Array (16) { i ->
+        return Array(16) { i ->
             inputNum.shiftRight(i * 8).and(BigInteger("255")).toInt()
         }
     }
+
     fun prepR(key: Array<Int>): BigInteger {
         val r = key.copyOfRange(0, 16)
 
@@ -216,7 +307,7 @@ fun poly1305MAC(key: Array<Int>, msg: Array<Int>): Array<Int> {
 
     val blocks = ceil(msg.size.toDouble() / 16.0).toInt()
     var count = 16
-    for (i in 0..blocks-1) {
+    for (i in 0..blocks - 1) {
         if (i == blocks - 1) {
             count = msg.size - (i * 16)
         }
@@ -231,7 +322,30 @@ fun poly1305MAC(key: Array<Int>, msg: Array<Int>): Array<Int> {
 }
 
 data class AEADEncrypted(var cyphertext: Array<Int>, var tag: Array<Int>)
-fun chacha20AEADEncrypt(aad: Array<Int>, key: Array<Int>, nonce: Array<Int>, msg: Array<Int>): AEADEncrypted {
+
+/**
+ * AEAD Construction
+ * =================
+ *
+ * The ChaCha20 and Poly1305 primitives are combined into an AEAD that
+ * takes a 256-bit key and 96-bit nonce as follows:
+ *
+ * The inputs to AEAD Construction are:
+ *
+ * - A 256-bit key
+ * - A 96-bit nonce -- different for each invocation with the same key
+ * - An arbitrary length plaintext
+ * - Arbitrary length additional authenticated data (AAD)
+ *
+ * The output from the AEAD is twofold:
+ *
+ * - The constructed message including AAD and encrypted plaintext.
+ * - A 128-bit tag, which is the output of the Poly1305 function run against the constructed message.
+ *
+ * See Section 2.8 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+ *
+ */
+fun chacha20AEADEncrypt(key: Array<Int>, nonce: Array<Int>, msg: Array<Int>, aad: Array<Int>): AEADEncrypted {
     fun toEightByteArray(length: Int): Array<Int> {
         val ret = Array(8) { 0 }
         for (i in 0..3) {
@@ -261,6 +375,27 @@ fun chacha20AEADEncrypt(aad: Array<Int>, key: Array<Int>, nonce: Array<Int>, msg
 }
 
 data class AEADMessage(val success: Boolean, val plaintext: Array<Int>, val aad: Array<Int>)
+
+/**
+ * Decryption of AEAD Construction
+ * ===============================
+ *
+ * The inputs to AEAD Decryption are:
+ *
+ * - A 256-bit key
+ * - A 96-bit nonce -- different for each invocation with the same key
+ * - Constructed AEAD message
+ * - Tag of the constructed message
+ *
+ * The output from the AEAD is threefold:
+ *
+ * - Flag indicating success or failure of MAC comparison to given tag
+ * - The original arbitrary length plaintext.
+ * - The Arbitrary length additional authenticated data (AAD) extracted from te construction
+ *
+ * See Section 2.8 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+ *
+ */
 fun chacha20AEADDecrypt(key: Array<Int>, nonce: Array<Int>, msg: AEADEncrypted): AEADMessage {
     fun getValue(value: Array<Int>): Int {
         var i = 0;
@@ -271,6 +406,7 @@ fun chacha20AEADDecrypt(key: Array<Int>, nonce: Array<Int>, msg: AEADEncrypted):
         }
         return work.toInt()
     }
+
     val onetimekey = poly1305KeyGen(key, nonce)
     val tag = poly1305MAC(onetimekey, msg.cyphertext)
     if (!(tag contentEquals msg.tag)) {
@@ -289,6 +425,12 @@ fun chacha20AEADDecrypt(key: Array<Int>, nonce: Array<Int>, msg: AEADEncrypted):
     return AEADMessage(true, plaintext, aad)
 }
 
+/**
+ * Close Envelope
+ * ==============
+ *
+ * Wrap the give AEAD Construction and tag into a sofe MIME "envelope" for including in email or other text transport
+ */
 fun closeEnvelope(content: AEADEncrypted): String {
     val buff = StringBuffer()
 
@@ -298,13 +440,22 @@ fun closeEnvelope(content: AEADEncrypted): String {
     buff.append("------------------------------------------------------------------------\n")
     buff.append(" Envelope Tool 1.0.0\n\n")
     buff.append(" ")
-    buff.append(Base64.getMimeEncoder(71, "\n ".toByteArray()).encodeToString(allContent.toTypedArray().map { i -> i.toByte() }.toByteArray()))
+    buff.append(
+        Base64.getMimeEncoder(71, "\n ".toByteArray())
+            .encodeToString(allContent.toTypedArray().map { i -> i.toByte() }.toByteArray())
+    )
     buff.append("\n")
     buff.append("------------------------------------------------------------------------\n")
 
     return buff.toString()
 }
 
+/**
+ * Open Envelope
+ * =============
+ *
+ * Unwrap the MIME encoded "envelope" and return the AEAD constructed message and tag.
+ */
 fun openEnvelope(content: String): AEADEncrypted {
     val lines = content.reader().readLines()
     if (lines.get(1).trim() != "Envelope Tool 1.0.0") {
@@ -328,7 +479,6 @@ fun openEnvelope(content: String): AEADEncrypted {
 }
 
 fun main(args: Array<String>) {
-    // Test Vector from Section 2.8.2 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
     val msg =
         "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it."
             .toByteArray(Charsets.UTF_8).map { b -> b.toInt() }.toTypedArray()
@@ -339,7 +489,7 @@ fun main(args: Array<String>) {
         0x07, 0x00, 0x00, 0x00, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
     )
 
-    val encContent = chacha20AEADEncrypt(aad, key, nonce, msg)
+    val encContent = chacha20AEADEncrypt(key, nonce, msg, aad)
     val envelope = closeEnvelope(encContent)
 
     println(envelope)
@@ -350,5 +500,4 @@ fun main(args: Array<String>) {
         serialize(plaintext)
         serialize(aadout)
     }
-
 }

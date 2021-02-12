@@ -4,9 +4,11 @@ import org.junit.Assert.*
 
 class MainKtTest {
 
+    /**
+     * Test Vector from Section 2.3.2 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun chacha20Block232() {
-        // Test Vector from Section 2.3.2 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val processed = chacha20Block(Array(32) { it * 1 }, 1, arrayOf(0, 0, 0, 9, 0, 0, 0, 0x4a, 0, 0, 0, 0))
         val expected = arrayOf(
             0x10, 0xf1, 0xe7, 0xe4, 0xd1, 0x3b, 0x59, 0x15, 0x50, 0x0f, 0xdd, 0x1f, 0xa3, 0x20, 0x71, 0xc4,
@@ -20,9 +22,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector from Section 2.4.2 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun chacha20Block242a() {
-        // Test Vector from Section 2.4.2 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val processed = chacha20Block(Array(32) { it * 1 }, 1, arrayOf(0, 0, 0, 0, 0, 0, 0, 0x4a, 0, 0, 0, 0))
         val expected = arrayOf(
             0x22, 0x4f, 0x51, 0xf3, 0x40, 0x1b, 0xd9, 0xe1, 0x2f, 0xde, 0x27, 0x6f, 0xb8, 0x63, 0x1d, 0xed,
@@ -36,9 +40,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector from Section 2.4.2 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun chacha20Block242b() {
-        // Test Vector from Section 2.4.2 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val processed = chacha20Block(Array(32) { it * 1 }, 2, arrayOf(0, 0, 0, 0, 0, 0, 0, 0x4a, 0, 0, 0, 0))
         val expected = arrayOf(
             0x69, 0xa6, 0x74, 0x9f, 0x3f, 0x63, 0x0f, 0x41, 0x22, 0xca, 0xfe, 0x28, 0xec, 0x4d, 0xc4, 0x7e,
@@ -52,9 +58,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector from Section 2.4.2 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun chacha20Encrypt242() {
-        // Test Vector from Section 2.4.2 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val ptBytes =
             "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it."
                 .toByteArray(Charsets.UTF_8).map { b -> b.toInt() }.toTypedArray()
@@ -75,9 +83,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     *  Flip the Test Vector from Section 2.4.2 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun chacha20Decrypt242() {
-        // Flip the Test Vector from Section 2.4.2 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val ctBytes = arrayOf(
             0x6e, 0x2e, 0x35, 0x9a, 0x25, 0x68, 0xf9, 0x80, 0x41, 0xba, 0x07, 0x28, 0xdd, 0x0d, 0x69, 0x81,
             0xe9, 0x7e, 0x7a, 0xec, 0x1d, 0x43, 0x60, 0xc2, 0x0a, 0x27, 0xaf, 0xcc, 0xfd, 0x9f, 0xae, 0x0b,
@@ -98,9 +108,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector from Section 2.6.2 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun poly1305KeyGen262() {
-        // Test Vector from Section 2.6.2 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val key = poly1305KeyGen(Array(32) { it + 0x80 }, arrayOf(0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7))
         val expected = arrayOf(
             0x8a, 0xd5, 0xa0, 0x8b, 0x90, 0x5f, 0x81, 0xcc, 0x81, 0x50, 0x40, 0x27, 0x4a, 0xb2, 0x94, 0x71,
@@ -112,9 +124,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector from Section 2.5.2 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun poly1305MAC252() {
-        // Test Vector from Section 2.5.2 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val key = arrayOf(
             0x85, 0xd6, 0xbe, 0x78, 0x57, 0x55, 0x6d, 0x33, 0x7f, 0x44, 0x52, 0xfe, 0x42, 0xd5, 0x06, 0xa8,
             0x01, 0x03, 0x80, 0x8a, 0xfb, 0x0d, 0xb2, 0xfd, 0x4a, 0xbf, 0xf6, 0xaf, 0x41, 0x49, 0xf5, 0x1b
@@ -131,9 +145,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector from Section 2.8.2 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun chacha20AEADEncrypt282() {
-        // Test Vector from Section 2.8.2 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val msg =
             "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it."
                 .toByteArray(Charsets.UTF_8).map { b -> b.toInt() }.toTypedArray()
@@ -144,7 +160,7 @@ class MainKtTest {
             0x07, 0x00, 0x00, 0x00, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
         )
 
-        val (mac, tag) = chacha20AEADEncrypt(aad, key, nonce, msg)
+        val (mac, tag) = chacha20AEADEncrypt(key, nonce, msg, aad)
         val expectedMAC = arrayOf(
             0x50, 0x51, 0x52, 0x53, 0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0x00, 0x00, 0x00, 0x00,
             0xd3, 0x1a, 0x8d, 0x34, 0x64, 0x8e, 0x60, 0xdb, 0x7b, 0x86, 0xaf, 0xbc, 0x53, 0xef, 0x7e, 0xc2,
@@ -171,10 +187,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Flip of Test Vector from Section 2.8.2 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun chacha20AEADecrypt282() {
-        // Flip of Test Vector from Section 2.8.2 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
-
         val key = Array(32) { it + 0x80 }
         val nonce = arrayOf(
             0x07, 0x00, 0x00, 0x00, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
@@ -217,9 +234,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #1 from A.1 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun testVectorA1_1() {
-        // Test Vector #1 from A.1 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val key = Array(32) { 0 }
         val nonce = Array(12) { 0 }
         val block = chacha20Block(key, 0, nonce)
@@ -235,9 +254,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #2 from A.1 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun testVectorA1_2() {
-        // Test Vector #2 from A.1 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val key = Array(32) { 0 }
         val nonce = Array(12) { 0 }
         val block = chacha20Block(key, 1, nonce)
@@ -253,9 +274,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #3 from A.1 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun testVectorA1_3() {
-        // Test Vector #3 from A.1 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val key = Array(32) { 0 }
         key.set(31, 1)
         val nonce = Array(12) { 0 }
@@ -272,9 +295,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #4 from A.1 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun testVectorA1_4() {
-        // Test Vector #4 from A.1 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val key = Array(32) { 0 }
         key.set(1, 0xff)
         val nonce = Array(12) { 0 }
@@ -291,9 +316,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #5 from A.1 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun testVectorA1_5() {
-        // Test Vector #5 from A.1 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val key = Array(32) { 0 }
         val nonce = Array(12) { 0 }
         nonce.set(11, 2)
@@ -310,9 +337,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #1 from A.2 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun testVectorA2_1() {
-        // Test Vector #1 from A.2 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val key = Array(32) { 0 }
         val nonce = Array(12) { 0 }
         val plaintext = Array(64) { 0 }
@@ -329,9 +358,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #2 from A.2 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun testVectorA2_2() {
-        // Test Vector #2 from A.2 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val key = Array(32) { 0 }
         key.set(31, 1)
         val nonce = Array(12) { 0 }
@@ -342,7 +373,7 @@ class MainKtTest {
                 "ribution\". Such statements include oral statements in IETF sessi" +
                 "ons, as well as written and electronic communications made at an" +
                 "y time or place, which are addressed to")
-                    .toByteArray(Charsets.UTF_8).map { b -> b.toInt() }.toTypedArray()
+            .toByteArray(Charsets.UTF_8).map { b -> b.toInt() }.toTypedArray()
         val cyphertext = chacha20Encrypt(key, 1, nonce, plaintext)
         val expected = arrayOf(
             0xa3, 0xfb, 0xf0, 0x7d, 0xf3, 0xfa, 0x2f, 0xde, 0x4f, 0x37, 0x6c, 0xa2, 0x3e, 0x82, 0x73, 0x70,
@@ -376,9 +407,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #3 from A.2 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun testVectorA2_3() {
-        // Test Vector #3 from A.2 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val key = arrayOf(
             0x1c, 0x92, 0x40, 0xa5, 0xeb, 0x55, 0xd3, 0x8a, 0xf3, 0x33, 0x88, 0x86, 0x04, 0xf6, 0xb5, 0xf0,
             0x47, 0x39, 0x17, 0xc1, 0x40, 0x2b, 0x80, 0x09, 0x9d, 0xca, 0x5c, 0xbc, 0x20, 0x70, 0x75, 0xc0,
@@ -412,9 +445,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #1 from A.3 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun testVectorA3_1() {
-        // Test Vector #1 from A.3 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val key = Array(32) { 0 }
         val msg = Array(64) { 0 }
 
@@ -426,16 +461,18 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #2 from A.3 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     *
+     *        Notice how r is equal to zero.  The part of the
+     *        Poly1305 algorithm where the accumulator is multiplied by r means
+     *        that with r equal zero, the tag will be equal to s regardless of the
+     *        content of the text.  Fortunately, all the proposed methods of
+     *        generating r are such that getting this particular weak key is very
+     *        unlikely.
+     */
     @Test
     fun testVectorA3_2() {
-        // Test Vector #2 from A.3 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
-        //        Notice how r is equal to zero.  The part of the
-        //        Poly1305 algorithm where the accumulator is multiplied by r means
-        //        that with r equal zero, the tag will be equal to s regardless of the
-        //        content of the text.  Fortunately, all the proposed methods of
-        //        generating r are such that getting this particular weak key is very
-        //        unlikely.
-
         val key = arrayOf(
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x36, 0xe5, 0xf6, 0xb5, 0xc5, 0xe0, 0x60, 0x70, 0xf0, 0xef, 0xca, 0x96, 0x22, 0x7a, 0x86, 0x3e,
@@ -477,10 +514,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #3 from A.3 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun testVectorA3_3() {
-        // Test Vector #3 from A.3 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
-
         val key = arrayOf(
             0x36, 0xe5, 0xf6, 0xb5, 0xc5, 0xe0, 0x60, 0x70, 0xf0, 0xef, 0xca, 0x96, 0x22, 0x7a, 0x86, 0x3e,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -522,10 +560,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #4 from A.3 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun testVectorA3_4() {
-        // Test Vector #4 from A.3 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
-
         val key = arrayOf(
             0x1c, 0x92, 0x40, 0xa5, 0xeb, 0x55, 0xd3, 0x8a, 0xf3, 0x33, 0x88, 0x86, 0x04, 0xf6, 0xb5, 0xf0,
             0x47, 0x39, 0x17, 0xc1, 0x40, 0x2b, 0x80, 0x09, 0x9d, 0xca, 0x5c, 0xbc, 0x20, 0x70, 0x75, 0xc0,
@@ -551,13 +590,14 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #5 from A.3 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     *
+     *  If one uses 130-bit partial reduction, does the code handle the case where partially
+     *  reduced final result is not fully reduced?
+     */
     @Test
     fun testVectorA3_5() {
-        // Test Vector #5 from A.3 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
-
-        //  If one uses 130-bit partial reduction, does the code handle the case where partially
-        //  reduced final result is not fully reduced?
-
         val key = Array(32) { 0 }
         key.set(0, 2)
         val msg = Array(16) { 0xff }
@@ -571,12 +611,13 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #6 from A.3 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     *
+     * What happens if addition of s overflows modulo 2^128?
+     */
     @Test
     fun testVectorA3_6() {
-        // Test Vector #6 from A.3 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
-
-        //  What happens if addition of s overflows modulo 2^128?
-
         val key = arrayOf(
             0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -593,13 +634,13 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #7 from A.3 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     *
+     * What happens if data limb is all ones and there is carry from lower limb?
+     */
     @Test
     fun testVectorA3_7() {
-        // Test Vector #7 from A.3 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
-
-        //  What happens if data limb is all ones and there is
-        //   carry from lower limb?
-
         val key = Array(32) { 0 }
         key.set(0, 1)
         val msg = arrayOf(
@@ -617,13 +658,13 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #8 from A.3 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     *
+     * What happens if final result from polynomial part is exactly 2^130-5?
+     */
     @Test
     fun testVectorA3_8() {
-        // Test Vector #8 from A.3 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
-
-        //  What happens if final result from polynomial part is
-        //   exactly 2^130-5?
-
         val key = Array(32) { 0 }
         key.set(0, 1)
         val msg = arrayOf(
@@ -640,13 +681,13 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #9 from A.3 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     *
+     * What happens if final result from polynomial part is exactly 2^130-6?
+     */
     @Test
     fun testVectorA3_9() {
-        // Test Vector #9 from A.3 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
-
-        //  What happens if final result from polynomial part is
-        //   exactly 2^130-6?
-
         val key = Array(32) { 0 }
         key.set(0, 2)
         val msg = Array(16) { 0xff }
@@ -661,13 +702,13 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #10 from A.3 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     *
+     * What happens if 5*H+L-type reduction produces 131-bit intermediate result?
+     */
     @Test
     fun testVectorA3_10() {
-        // Test Vector #10 from A.3 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
-
-        //  What happens if 5*H+L-type reduction produces
-        //   131-bit intermediate result?
-
         val key = Array(32) { 0 }
         key.set(0, 1)
         key.set(8, 4)
@@ -688,13 +729,13 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #11 from A.3 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     *
+     * What happens if 5*H+L-type reduction produces 131-bit final result?
+     */
     @Test
     fun testVectorA3_11() {
-        // Test Vector #11 from A.3 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
-
-        //  What happens if 5*H+L-type reduction produces
-        //   131-bit final result?
-
         val key = Array(32) { 0 }
         key.set(0, 1)
         key.set(8, 4)
@@ -713,6 +754,9 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #3 from A.2 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun testVectorA4_1() {
         // Test Vector #1 from A.4 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
@@ -730,9 +774,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #2 from A.4 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun testVectorA4_2() {
-        // Test Vector #2 from A.4 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val key = Array(32) { 0 }
         key.set(31, 1)
         val nonce = Array(12) { 0 }
@@ -749,9 +795,11 @@ class MainKtTest {
         }
     }
 
+    /**
+     * Test Vector #3 from A.4 in [RFC 7539](https://datatracker.ietf.org/doc/rfc7539/?include_text=1)
+     */
     @Test
     fun testVectorA4_3() {
-        // Test Vector #3 from A.4 in https://datatracker.ietf.org/doc/rfc7539/?include_text=1
         val key = arrayOf(
             0x1c, 0x92, 0x40, 0xa5, 0xeb, 0x55, 0xd3, 0x8a, 0xf3, 0x33, 0x88, 0x86, 0x04, 0xf6, 0xb5, 0xf0,
             0x47, 0x39, 0x17, 0xc1, 0x40, 0x2b, 0x80, 0x09, 0x9d, 0xca, 0x5c, 0xbc, 0x20, 0x70, 0x75, 0xc0,
