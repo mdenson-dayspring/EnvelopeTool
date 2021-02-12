@@ -1,6 +1,9 @@
-import java.io.BufferedReader
 import java.lang.Math.ceil
 import java.math.BigInteger
+import java.security.MessageDigest
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 /**
@@ -106,29 +109,6 @@ fun chacha20Block(key: Array<Int>, counter: Int, nonce: Array<Int>): Array<Int> 
     return toByteArray(Array(16) { i ->
         (state.get(i) + block_in.get(i)) and 0xffffffff
     })
-}
-
-/**
- * Format byte array in form ff:ff:ff...:ff
- *
- * Inpyt are an arbitrary length byte array
- */
-fun fingerprint(bytes: Array<Int>): String {
-    val ret = StringBuffer()
-    var i = 0
-    val length = bytes.size
-    for (b in bytes) {
-        val v = "00" + (b).toString(16)
-        ret.append(v.substring(v.length - 2))
-        i++
-        if (i != length) {
-            ret.append(":")
-        }
-        if (i % 16 == 0 && i != length) {
-            ret.append("\n")
-        }
-    }
-    return ret.toString()
 }
 
 /**
@@ -431,14 +411,15 @@ fun chacha20AEADDecrypt(key: Array<Int>, nonce: Array<Int>, msg: AEADEncrypted):
  *
  * Wrap the give AEAD Construction and tag into a sofe MIME "envelope" for including in email or other text transport
  */
-fun closeEnvelope(content: AEADEncrypted): String {
+fun closeEnvelope(content: AEADEncrypted, messageTime: String): String {
     val buff = StringBuffer()
 
     val allContent = content.cyphertext.toMutableList()
     allContent.addAll(content.tag)
 
     buff.append("------------------------------------------------------------------------\n")
-    buff.append(" Envelope Tool 1.0.0\n\n")
+    buff.append(" Envelope Tool 1.0.0\n")
+    buff.append(" Time: $messageTime\n\n")
     buff.append(" ")
     buff.append(
         Base64.getMimeEncoder(71, "\n ".toByteArray())
@@ -450,54 +431,136 @@ fun closeEnvelope(content: AEADEncrypted): String {
     return buff.toString()
 }
 
+fun String.toTypedIntArray(): Array<Int> {
+    return this.toByteArray(Charsets.UTF_8).toTypedIntArray()
+}
+
+fun ByteArray.toTypedIntArray(): Array<Int> {
+    return this.map { i ->
+        if (i >= 0) {
+            i.toInt()
+        } else {
+            i.toInt() + 0x100
+        }
+    }.toTypedArray()
+}
+
+fun Array<Int>.toByteArray(): ByteArray {
+    return this.map { it.toByte() }.toByteArray()
+}
+
+fun Array<Int>.toUTF8String(): String {
+    return this.toByteArray().toString(Charsets.UTF_8)
+}
+
+/**
+ * Format byte array in form ff:ff:ff...:ff
+ *
+ * Inpyt are an arbitrary length byte array
+ */
+fun Array<Int>.fingerprint(): String {
+    val ret = StringBuffer()
+    var i = 0
+    val length = this.size
+    for (b in this) {
+        val v = "00" + (b).toString(16)
+        ret.append(v.substring(v.length - 2))
+        i++
+        if (i != length) {
+            ret.append(":")
+        }
+        if (i % 16 == 0 && i != length) {
+            ret.append("\n")
+        }
+    }
+    return ret.toString()
+}
+
+data class EnvelopeContents(
+    val success: Boolean,
+    val version: String? = null,
+    val messageTime: String? = null,
+    val aead: AEADEncrypted? = null)
+
 /**
  * Open Envelope
  * =============
  *
  * Unwrap the MIME encoded "envelope" and return the AEAD constructed message and tag.
  */
-fun openEnvelope(content: String): AEADEncrypted {
+fun openEnvelope(content: String): EnvelopeContents {
     val lines = content.reader().readLines()
-    if (lines.get(1).trim() != "Envelope Tool 1.0.0") {
-        return AEADEncrypted(arrayOf(), arrayOf())
+    if (!lines.get(1).trim().startsWith("Envelope Tool") ||
+        !lines.get(2).trim().startsWith("Time:")) {
+        return EnvelopeContents(false)
     } else {
+        // get version
+        val version = lines.get(1).substring(14).trim()
+        // get timestamp
+        val timestamp = lines.get(2).substring(6).trim()
+        // get content
         val buff = StringBuffer()
-        var line = 3
-        while (lines.get(line) != "------------------------------------------------------------------------") {
+        var line = 4
+        while (!lines.get(line).startsWith("--")) {
             buff.append(lines.get(line))
             line++
         }
-        val bytes = Base64.getMimeDecoder().decode(buff.toString()).map { i ->
-            if (i >= 0) {
-                i.toInt()
-            } else {
-                i.toInt() + 0x100
-            }
-        }.toTypedArray()
-        return AEADEncrypted(bytes.copyOfRange(0, bytes.size - 16), bytes.copyOfRange(bytes.size - 16, bytes.size))
+        val bytes = Base64.getMimeDecoder().decode(buff.toString()).toTypedIntArray()
+        val aead = AEADEncrypted(bytes.copyOfRange(0, bytes.size - 16), bytes.copyOfRange(bytes.size - 16, bytes.size))
+        return EnvelopeContents(true, version, timestamp, aead)
     }
 }
 
+fun hash(bytes: ByteArray): ByteArray {
+    val md = MessageDigest.getInstance("SHA-256")
+    return md.digest(bytes)
+}
+
+fun hash(bytes: Array<Int>): Array<Int> {
+    return hash(bytes.toByteArray()).toTypedIntArray()
+}
+
+fun hashPassword(pwd: String): Array<Int> {
+    val bytes = pwd.toByteArray(Charsets.UTF_8)
+    var digest = hash(bytes)
+    for (i in 0..100) {
+        digest = hash(bytes)
+    }
+    return digest.toTypedIntArray()
+}
+
 fun main(args: Array<String>) {
-    val msg =
-        "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it."
-            .toByteArray(Charsets.UTF_8).map { b -> b.toInt() }.toTypedArray()
-    val aad: Array<Int> = arrayOf()
+    if(args.size != 3) {
+        return
+    }
 
-    val key = Array(32) { it + 0x80 }
-    val nonce = arrayOf(
-        0x07, 0x00, 0x00, 0x00, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
-    )
+    val mode = args.get(0)
+    val password = args.get(1)
+    val text = args.get(2)
 
-    val encContent = chacha20AEADEncrypt(key, nonce, msg, aad)
-    val envelope = closeEnvelope(encContent)
+    println(mode)
 
-    println(envelope)
-    val decContent = openEnvelope(envelope)
+    if (mode == "e") {
+        val messageTime = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)
+        val msg = text.toTypedIntArray()
+        val aad: Array<Int> = arrayOf()
 
-    val (success, plaintext, aadout) = chacha20AEADDecrypt(key, nonce, decContent)
-    if (success) {
-        serialize(plaintext)
-        serialize(aadout)
+        val enckey = hashPassword(messageTime + "password")
+        val nonce = hash(("1.0.0" + messageTime).toTypedIntArray()).copyOfRange(0, 12)
+
+        val encContent = chacha20AEADEncrypt(enckey, nonce, msg, aad)
+        val envelope = closeEnvelope(encContent, messageTime)
+        println(envelope)
+    } else if (mode == "d") {
+        val (envSucces, version, time, aead) = openEnvelope(text)
+        if (envSucces && version != null && aead != null && time != null) {
+            val deckey = hashPassword(time + "password")
+            val decNonce = hash((version + time).toTypedIntArray()).copyOfRange(0, 12)
+
+            val (success, plaintext, aadout) = chacha20AEADDecrypt(deckey, decNonce, aead)
+            if (success) {
+                println(plaintext.toUTF8String())
+            }
+        }
     }
 }

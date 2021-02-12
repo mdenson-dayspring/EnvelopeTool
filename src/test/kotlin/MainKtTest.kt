@@ -1,6 +1,10 @@
 import org.junit.Test
 
 import org.junit.Assert.*
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import kotlin.test.assertFails
 
 class MainKtTest {
 
@@ -65,7 +69,7 @@ class MainKtTest {
     fun chacha20Encrypt242() {
         val ptBytes =
             "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it."
-                .toByteArray(Charsets.UTF_8).map { b -> b.toInt() }.toTypedArray()
+                .toTypedIntArray()
         val ctBytes = chacha20Encrypt(Array(32) { it * 1 }, 1, arrayOf(0, 0, 0, 0, 0, 0, 0, 0x4a, 0, 0, 0, 0), ptBytes)
         val expected = arrayOf(
             0x6e, 0x2e, 0x35, 0x9a, 0x25, 0x68, 0xf9, 0x80, 0x41, 0xba, 0x07, 0x28, 0xdd, 0x0d, 0x69, 0x81,
@@ -101,7 +105,7 @@ class MainKtTest {
         val ptBytes = chacha20Encrypt(Array(32) { it * 1 }, 1, arrayOf(0, 0, 0, 0, 0, 0, 0, 0x4a, 0, 0, 0, 0), ctBytes)
         val expected =
             "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it."
-                .toByteArray(Charsets.UTF_8).map { b -> b.toInt() }.toTypedArray()
+                .toTypedIntArray()
         assertEquals("Length of result", expected.size, ptBytes.size)
         for (i in 0..expected.size - 1) {
             assertEquals("Error in byte " + i, expected.get(i).toString(16), ptBytes.get(i).toString(16))
@@ -133,8 +137,7 @@ class MainKtTest {
             0x85, 0xd6, 0xbe, 0x78, 0x57, 0x55, 0x6d, 0x33, 0x7f, 0x44, 0x52, 0xfe, 0x42, 0xd5, 0x06, 0xa8,
             0x01, 0x03, 0x80, 0x8a, 0xfb, 0x0d, 0xb2, 0xfd, 0x4a, 0xbf, 0xf6, 0xaf, 0x41, 0x49, 0xf5, 0x1b
         )
-        val msg = "Cryptographic Forum Research Group"
-            .toByteArray(Charsets.UTF_8).map { b -> b.toInt() }.toTypedArray()
+        val msg = "Cryptographic Forum Research Group".toTypedIntArray()
         val mac = poly1305MAC(key, msg)
         val expected = arrayOf(
             0xa8, 0x06, 0x1d, 0xc1, 0x30, 0x51, 0x36, 0xc6, 0xc2, 0x2b, 0x8b, 0xaf, 0x0c, 0x01, 0x27, 0xa9,
@@ -152,7 +155,7 @@ class MainKtTest {
     fun chacha20AEADEncrypt282() {
         val msg =
             "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it."
-                .toByteArray(Charsets.UTF_8).map { b -> b.toInt() }.toTypedArray()
+                .toTypedIntArray()
         val aad = arrayOf(0x50, 0x51, 0x52, 0x53, 0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7)
 
         val key = Array(32) { it + 0x80 }
@@ -216,7 +219,7 @@ class MainKtTest {
 
         val expectedMSG =
             "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it."
-                .toByteArray(Charsets.UTF_8).map { b -> b.toInt() }.toTypedArray()
+                .toTypedIntArray()
         val expectedAAD = arrayOf(0x50, 0x51, 0x52, 0x53, 0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7)
 
         val (success, msg, aad) = chacha20AEADDecrypt(key, nonce, encrypted)
@@ -373,7 +376,7 @@ class MainKtTest {
                 "ribution\". Such statements include oral statements in IETF sessi" +
                 "ons, as well as written and electronic communications made at an" +
                 "y time or place, which are addressed to")
-            .toByteArray(Charsets.UTF_8).map { b -> b.toInt() }.toTypedArray()
+            .toTypedIntArray()
         val cyphertext = chacha20Encrypt(key, 1, nonce, plaintext)
         val expected = arrayOf(
             0xa3, 0xfb, 0xf0, 0x7d, 0xf3, 0xfa, 0x2f, 0xde, 0x4f, 0x37, 0x6c, 0xa2, 0x3e, 0x82, 0x73, 0x70,
@@ -815,6 +818,50 @@ class MainKtTest {
         assertEquals("Length of one time key", expected.size, onetimekey.size)
         for (i in 0..expected.size - 1) {
             assertEquals("Error in byte " + i, expected.get(i).toString(16), onetimekey.get(i).toString(16))
+        }
+    }
+
+    @Test
+    fun envelopeRoundTrip() {
+        val messageTime = "2021-02-12T01:54:30.832413Z"
+        val quote =
+            "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it."
+        val expectedEnv = "------------------------------------------------------------------------\n" +
+                " Envelope Tool 1.0.0\n" +
+                " Time: 2021-02-12T01:54:30.832413Z\n" +
+                "\n" +
+                " lhZPByJXAs2m/IyxMC3qE4j2HY7MPSOPUHEeQ/kz+vfO8hmVE9rMGr77UgRvRPcrfzY/\n" +
+                " knUXeChY52oyLLphuH3zflDN3OkGl3xciQYEgDC5G5ugv+R0BHGa58m4E7d9QcHCtAp/\n" +
+                " h2uzrRf0l5MxNZrJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHIAAAAAAAAAHCeKUP08kL07\n" +
+                " budJsIISqA==\n" +
+                "------------------------------------------------------------------------\n"
+
+        val msg = quote.toTypedIntArray()
+        val aad: Array<Int> = arrayOf()
+
+        val enckey = hashPassword(messageTime + "password")
+        val nonce = hash(("1.0.0" + messageTime).toTypedIntArray()).copyOfRange(0, 12)
+
+        val encContent = chacha20AEADEncrypt(enckey, nonce, msg, aad)
+        val envelope = closeEnvelope(encContent, messageTime)
+
+        assertEquals("envelope", expectedEnv, envelope)
+
+        // -- Now decrypt
+
+        val (envSuccess, version, time, aead) = openEnvelope(envelope)
+        assertTrue("Envelope not unpacked", envSuccess)
+        if (envSuccess && version != null && aead != null && time != null) {
+            val deckey = hashPassword(time + "password")
+            val decNonce = hash((version + time).toTypedIntArray()).copyOfRange(0, 12)
+
+            val (success, plaintext, aadout) = chacha20AEADDecrypt(deckey, decNonce, aead)
+
+            assertTrue("MAC did not match", success)
+
+            assertEquals("Decryption failed", quote, plaintext.toUTF8String())
+        } else {
+            fail("Data from Envelope unpack is null")
         }
     }
 }
