@@ -530,19 +530,21 @@ fun hashPassword(pwd: String): Array<Int> {
 }
 
 fun main(args: Array<String>) {
-    if(args.size != 3) {
+    if(args.size != 2) {
+        println("To encrypt a file: ")
+        println("  $ cat filename | java -jar envelope.jar e password")
+        println("To decrypt an envelope: ")
+        println("  $ cat envelope | java -jar envelope.jar d password")
         return
     }
 
     val mode = args.get(0)
     val password = args.get(1)
-    val text = args.get(2)
-
-    println(mode)
+    val input = generateSequence(::readLine).joinToString("\n")
 
     if (mode == "e") {
         val messageTime = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)
-        val msg = text.toTypedIntArray()
+        val msg = input.toTypedIntArray()
         val aad: Array<Int> = arrayOf()
 
         val enckey = hashPassword(messageTime + "password")
@@ -552,7 +554,7 @@ fun main(args: Array<String>) {
         val envelope = closeEnvelope(encContent, messageTime)
         println(envelope)
     } else if (mode == "d") {
-        val (envSucces, version, time, aead) = openEnvelope(text)
+        val (envSucces, version, time, aead) = openEnvelope(input)
         if (envSucces && version != null && aead != null && time != null) {
             val deckey = hashPassword(time + "password")
             val decNonce = hash((version + time).toTypedIntArray()).copyOfRange(0, 12)
